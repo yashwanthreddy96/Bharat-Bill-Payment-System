@@ -1,0 +1,24 @@
+use upi;
+create view view_upi as 
+select bill_amount,created_at,fulfilled_at,b.mode,a.name,bank_name,mdr,biller_name,setu_fee,m.category,coalesce(interchange,NULL,2.25) interchange_rates 
+from bill b 
+left join ai a on b.AI_id=a.AI_id
+left join bou bo on b.BOU_id=bo.BOU_id
+left join biller br on b.biller_id=br.Biller_id
+left join mdm m on br.mdm_id=m.MDM_id
+left join npci n on m.category=n.category and b.mode=n.mode; 
+
+select month(fulfilled_at) monthly,v.mode,sum(bill_amount) total_amount from view_upi v
+group by v.mode,monthly order by monthly,total_amount desc;
+
+select month(created_at) bill_month,category,sum(bill_amount) total,avg(bill_amount) avrg 
+from view_upi v group by bill_month,category order by bill_month, total desc,avrg;
+
+select month(fulfilled_at) paid_month,v.name,bank_name,sum(bill_amount) total from view_upi v
+group by paid_month,v.name order by paid_month,total desc;
+
+select biller_name,category,sum(setu_fee) total_fee from view_upi v 
+group by biller_name order by total_fee desc;
+
+select month(fulfilled_at) monthly,biller_name,sum(setu_fee) total_fee from view_upi v 
+group by monthly,biller_name order by monthly,total_fee desc;
